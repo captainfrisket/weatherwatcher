@@ -1,7 +1,7 @@
 *.class
 *.out
-
-# Build Files #
+.settings/*
+bin/*
 build/*
 
 # Package Files #
