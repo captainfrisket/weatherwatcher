@@ -57,8 +57,21 @@ public class TestWeatherEventEngine {
 		WeatherEventEngine eng = new WeatherEventEngine();
 		eng.setPeriodLength(weatherEventEnginePeriodLength, weatherEventEnginePeriodUnit);
 
-		eng.setActivate(() -> TestWeatherEventEngine.activateTriggered());
-		eng.setDeactivate(() -> TestWeatherEventEngine.deactivateTriggered());
+//		eng.setActivate(() -> TestWeatherEventEngine.activateTriggered());
+		eng.setActivate(new Runnable() {
+			@Override
+			public void run() {
+				TestWeatherEventEngine.activateTriggered();
+			}
+		});
+		
+//		eng.setDeactivate(() -> TestWeatherEventEngine.deactivateTriggered());
+		eng.setDeactivate(new Runnable() {
+			@Override
+			public void run() {
+				TestWeatherEventEngine.deactivateTriggered();
+			}
+		});
 		
 		eng.setWeatherService(mockWS);
 		return eng;

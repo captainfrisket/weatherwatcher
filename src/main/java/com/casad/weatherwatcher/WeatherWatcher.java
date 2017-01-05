@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amphibian.weather.request.Feature;
 import com.amphibian.weather.request.WeatherRequest;
+import com.amphibian.weather.response.WeatherResponse;
 
 import twitter4j.TwitterException;
 
@@ -20,30 +21,47 @@ public class WeatherWatcher {
 		
 		Configuration c = Configuration.getConfig();
 		
-		String weatherAPIKey = c.getWundergroundApiKey();
+		final String weatherAPIKey = c.getWundergroundApiKey();
 		assertSet("A weather API key must be specified. See README.md for more information.", weatherAPIKey);
 		
-		String zipCode = c.getZipCode();
+		final String zipCode = c.getZipCode();
 		assertSet("A weather zip key must be specified. See README.md for more information.", zipCode);
 		
 		// Prepare the weather event engine
 		WeatherEventEngine eng = new WeatherEventEngine();
 		
 		eng.setPeriodLength(60, TimeUnit.MINUTES);
-		eng.setActivate(() -> logger.info("Activating!"));
-		eng.setDeactivate(() -> logger.info("Deactivating!"));
+//		eng.setActivate(() -> logger.info("Activating!"));
+		eng.setActivate(new Runnable() {
+			@Override
+			public void run() {
+				logger.info("Activating!");
+			}
+		});
 		
-		eng.setWeatherService(() -> {
-			WeatherRequest req = new WeatherRequest();
-			req.setApiKey(weatherAPIKey);
-			req.addFeature(Feature.CONDITIONS);
-			req.addFeature(Feature.FORECAST);
+//		eng.setDeactivate(() -> logger.info("Deactivating!"));
+		eng.setDeactivate(new Runnable() {
+			@Override
+			public void run() {
+				logger.info("Deactivating!");
+			}
+		});
+		
+		eng.setWeatherService(new WeatherService() {
+			
+			@Override
+			public WeatherResponse getWeatherReport() {
+				WeatherRequest req = new WeatherRequest();
+				req.setApiKey(weatherAPIKey);
+				req.addFeature(Feature.CONDITIONS);
+				req.addFeature(Feature.FORECAST);
 
-			return req.query(zipCode);
+				return req.query(zipCode);
+			}
 		});
 		
 		eng.start();
-//		while(true) {}
+		while(true) {}
 	}
 
 	private static void assertSet(String message, String value) {
