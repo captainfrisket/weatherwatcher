@@ -1,4 +1,4 @@
-package swirl;
+package com.casad.weatherwatcher;
 
 import java.util.List;
 
