@@ -9,12 +9,10 @@ import com.amphibian.weather.request.Feature;
 import com.amphibian.weather.request.WeatherRequest;
 import com.amphibian.weather.response.WeatherResponse;
 
-import twitter4j.TwitterException;
-
 public class WeatherWatcher {
 	private static final Logger logger = LoggerFactory.getLogger(WeatherWatcher.class);
 
-	public static void main(String[] args) throws TwitterException {
+	public static void main(String[] args) {
 		
 		// preflight checks
 		logger.info("Waking up!");
