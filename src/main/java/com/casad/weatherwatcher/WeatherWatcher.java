@@ -12,12 +12,48 @@ import com.amphibian.weather.response.WeatherResponse;
 public class WeatherWatcher {
 	private static final Logger logger = LoggerFactory.getLogger(WeatherWatcher.class);
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		
 		// preflight checks
 		logger.info("Waking up!");
 		
-		Configuration c = Configuration.getConfig();
+		// Get configuration settings
+		final Configuration c = Configuration.getConfig();
+		
+		// create gpio controller instance
+//		final GpioController gpio = GpioFactory.getInstance();
+//		GpioPinDigitalOutput readyPin = gpio.provisionDigitalOutputPin(null, "ReadyRelay", PinState.LOW);
+//		GpioPinDigitalOutput activePin = gpio.provisionDigitalOutputPin(null);
+		
+		// Create RampController instance with pin details
+		RampController controller = new RampController(new Runnable() {
+			@Override
+			public void run() {
+				// Make IDLE / OFF
+//				readyPin.low();
+//				activePin.low();
+				
+				logger.info("Setting to idle/off!");
+			}
+		}, new Runnable() {
+			@Override
+			public void run() {
+				// Make READY
+//				readyPin.high();
+//				activePin.low();
+				
+				logger.info("Setting to READY (low active)!");
+			}
+		}, new Runnable() {
+			@Override
+			public void run() {
+				// Make ACTIVE
+//				readyPin.high();
+//				activePin.low();
+				
+				logger.info("Setting to ACTIVE - Full ON!");
+			}
+		});
 		
 		final String weatherAPIKey = c.getWundergroundApiKey();
 		assertSet("A weather API key must be specified. See README.md for more information.", weatherAPIKey);
@@ -27,24 +63,8 @@ public class WeatherWatcher {
 		
 		// Prepare the weather event engine
 		WeatherEventEngine eng = new WeatherEventEngine();
-		
 		eng.setPeriodLength(60, TimeUnit.MINUTES);
-//		eng.setActivate(() -> logger.info("Activating!"));
-		eng.setActivate(new Runnable() {
-			@Override
-			public void run() {
-				logger.info("Activating!");
-			}
-		});
-		
-//		eng.setDeactivate(() -> logger.info("Deactivating!"));
-		eng.setDeactivate(new Runnable() {
-			@Override
-			public void run() {
-				logger.info("Deactivating!");
-			}
-		});
-		
+		eng.setRampController(controller);
 		eng.setWeatherService(new WeatherService() {
 			
 			@Override
@@ -59,7 +79,9 @@ public class WeatherWatcher {
 		});
 		
 		eng.start();
-		while(true) {}
+		while(true) {
+			Thread.sleep(3600000);
+		}
 	}
 
 	private static void assertSet(String message, String value) {

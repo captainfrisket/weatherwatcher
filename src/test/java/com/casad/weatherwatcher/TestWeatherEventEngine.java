@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 //import org.junit.Assert;
 import org.junit.Test;
 
@@ -15,8 +16,6 @@ import com.amphibian.weather.response.Forecast;
 import com.amphibian.weather.response.ForecastDay;
 import com.amphibian.weather.response.ForecastWrapper;
 import com.amphibian.weather.response.WeatherResponse;
-import com.casad.weatherwatcher.WeatherEventEngine;
-import com.casad.weatherwatcher.WeatherService;
 
 public class TestWeatherEventEngine {
 
@@ -27,18 +26,19 @@ public class TestWeatherEventEngine {
 	private static final TimeUnit weatherEventEnginePeriodUnit = TimeUnit.MILLISECONDS;
 	
 	private static int activateCount;
-	private static int deactivateCount;
+	private static int idleCount;
+	private static int readyCount;
 	
 	private static final String CLEAR = "Clear";
 	private static final String SNOW = "SNOW";
 
 	private static final WeatherResponse GOOD_WEATHER = createWeatherResponse(CLEAR, 72, CLEAR, CLEAR, CLEAR, CLEAR);
-	private static final WeatherResponse SNOWING = createWeatherResponse(SNOW, 72, CLEAR, CLEAR, CLEAR, CLEAR);
+	private static final WeatherResponse CLEAR_COLD = createWeatherResponse(CLEAR, 10, CLEAR, CLEAR, CLEAR, CLEAR);
+	private static final WeatherResponse SNOWING = createWeatherResponse(SNOW, 10, CLEAR, CLEAR, CLEAR, CLEAR);
 
 	
 	@Test
 	public void testStartStop() throws Exception {
-		resetTriggers();
 		MockWeatherService mockWS = new MockWeatherService();
 		mockWS.setWeatherReport(GOOD_WEATHER);
 
@@ -50,36 +50,42 @@ public class TestWeatherEventEngine {
 
 		assertTrue(eng.stop());
 		assertEquals(0, activateCount);
-		assertEquals(0, deactivateCount);
+		assertEquals(0, readyCount);
+		assertEquals(1, idleCount);
+
 	}
 
 	private WeatherEventEngine getWeatherEngineForTest(MockWeatherService mockWS) {
 		WeatherEventEngine eng = new WeatherEventEngine();
 		eng.setPeriodLength(weatherEventEnginePeriodLength, weatherEventEnginePeriodUnit);
 
-//		eng.setActivate(() -> TestWeatherEventEngine.activateTriggered());
-		eng.setActivate(new Runnable() {
+		RampController mockController = new RampController(new Runnable() {
 			@Override
 			public void run() {
+				// Make IDLE / OFF
+				TestWeatherEventEngine.idleTriggered();
+			}
+		}, new Runnable() {
+			@Override
+			public void run() {
+				// Make READY
+				TestWeatherEventEngine.readyTriggered();
+			}
+		}, new Runnable() {
+			@Override
+			public void run() {
+				// Make ACTIVE
 				TestWeatherEventEngine.activateTriggered();
 			}
 		});
 		
-//		eng.setDeactivate(() -> TestWeatherEventEngine.deactivateTriggered());
-		eng.setDeactivate(new Runnable() {
-			@Override
-			public void run() {
-				TestWeatherEventEngine.deactivateTriggered();
-			}
-		});
-		
+		eng.setRampController(mockController);
 		eng.setWeatherService(mockWS);
 		return eng;
 	}
 
 	@Test
 	public void testActivate() throws Exception {
-		resetTriggers();
 		MockWeatherService mockWS = new MockWeatherService();
 		mockWS.setWeatherReport(GOOD_WEATHER);
 
@@ -94,12 +100,32 @@ public class TestWeatherEventEngine {
 		
 		assertTrue(eng.stop());
 		assertEquals(1, activateCount);
-		assertEquals(0, deactivateCount);
+		assertEquals(0, readyCount);
+		assertEquals(1, idleCount);
+	}
+	
+	@Test
+	public void testReady() throws Exception {
+		MockWeatherService mockWS = new MockWeatherService();
+		mockWS.setWeatherReport(GOOD_WEATHER);
+
+		WeatherEventEngine eng = getWeatherEngineForTest(mockWS); 
+
+		eng.start();
+
+		mockWS.waitForQuery(3);
+		mockWS.setWeatherReport(CLEAR_COLD);
+		
+		mockWS.waitForQuery(3);
+		
+		assertTrue(eng.stop());
+		assertEquals(0, activateCount);
+		assertEquals(1, readyCount);
+		assertEquals(1, idleCount);
 	}
 	
 	@Test
 	public void testDeactivate() throws Exception {
-		resetTriggers();
 		MockWeatherService mockWS = new MockWeatherService();
 		mockWS.setWeatherReport(GOOD_WEATHER);
 
@@ -115,20 +141,29 @@ public class TestWeatherEventEngine {
 		
 		assertTrue(eng.stop());
 		assertEquals(1, activateCount);
-		assertEquals(1, deactivateCount);
+		assertEquals(0, readyCount);
+		assertEquals(2, idleCount);
 	}
 
-	private void resetTriggers() {
+	@Before
+	public void resetTriggers() {
 		activateCount = 0;
-		deactivateCount = 0;
+		readyCount = 0;
+		idleCount = 0;
 	}
 
 	private static void activateTriggered() {
 		activateCount++;
 	}
 
-	private static void deactivateTriggered() {
-		deactivateCount++;
+	private static void readyTriggered() {
+		readyCount++;
+		
+	}
+
+	private static void idleTriggered() {
+		idleCount++;
+		
 	}
 
 	public static WeatherResponse createWeatherResponse(String current, long temp, String period1Conditions,
