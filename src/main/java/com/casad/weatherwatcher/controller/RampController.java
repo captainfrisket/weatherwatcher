@@ -1,4 +1,4 @@
-package com.casad.weatherwatcher;
+package com.casad.weatherwatcher.controller;
 
 public class RampController {
 
@@ -8,19 +8,12 @@ public class RampController {
 
 	private Runnable setIdle, setReady, setActive;
 	private RampState currentState = null;
-//	private RampController insatnce = null;
-//
-//	public RampController getInsatnce() {
-//		return insatnce;
-//	}
 
 	public RampController(Runnable makeIdle, Runnable makeReady, Runnable makeActive) {
 		setIdle = makeIdle;
 		setReady = makeReady;
 		setActive = makeActive;
-
-		currentState = RampState.IDLE;
-		setIdle.run();
+		currentState = null;
 	}
 
 	public void setState(RampState newState) {

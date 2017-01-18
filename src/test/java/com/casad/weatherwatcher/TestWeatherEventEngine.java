@@ -16,6 +16,7 @@ import com.amphibian.weather.response.Forecast;
 import com.amphibian.weather.response.ForecastDay;
 import com.amphibian.weather.response.ForecastWrapper;
 import com.amphibian.weather.response.WeatherResponse;
+import com.casad.weatherwatcher.controller.RampController;
 
 public class TestWeatherEventEngine {
 

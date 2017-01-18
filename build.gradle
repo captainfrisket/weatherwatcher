@@ -27,11 +27,15 @@ dependencies {
 //    compile group: 'org.twitter4j', name: 'twitter4j-core', version: '4.0.1'
     compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.5'
     compile 'com.github.dcasavant:wundergroundapi:master-SNAPSHOT'
-
+	compile 'com.github.lodenrogue:JMaker:master-SNAPSHOT'
+	
     // Declare the dependency for your favorite test framework you want to use in your tests.
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-core:2.+"
     
+    compile 'com.google.api-client:google-api-client:1.22.0'
+    compile 'com.google.oauth-client:google-oauth-client-jetty:1.22.0'
+    compile 'com.google.apis:google-api-services-sheets:v4-rev40-1.22.0'
 }
 
 mainClassName = 'com.casad.weatherwatcher.WeatherWatcher'

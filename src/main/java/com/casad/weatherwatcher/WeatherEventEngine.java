@@ -9,11 +9,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amphibian.weather.response.WeatherResponse;
-import com.casad.weatherwatcher.RampController.RampState;
+import com.casad.weatherwatcher.controller.RampController;
+import com.casad.weatherwatcher.controller.RampController.RampState;
 
 /**
  * The WeatherEventEngine will invoke callbacks on specific events returned from
- * the {@link WeatherService}. When the temprature drops below the idle
+ * the {@link WeatherService}. When the temperature drops below the idle
  * threshold, the state will move from IDLE to READY. If SNOW is returned as the
  * current or immediate upcoming weather, the state will move to ACTIVE.
  * 
@@ -23,10 +24,10 @@ import com.casad.weatherwatcher.RampController.RampState;
 public class WeatherEventEngine {
 	private static final Logger logger = LoggerFactory.getLogger(WeatherEventEngine.class);
 
-	private int idleThreshold = 35;
+	private int readyThreshold = 35;
 
 	private WeatherService ws = null;
-//	private Runnable activate = null, deactivate = null;
+	private NotificationService ns = null;
 
 	private ScheduledExecutorService executor = null;
 	private ScheduledFuture<?> future = null;
@@ -49,23 +50,31 @@ public class WeatherEventEngine {
 				try {
 					WeatherResponse response = ws.getWeatherReport();
 					logWeather(response);
-					
+
 					if (isSnowingNowOrSoon(response)) {
-						rampController.setState(RampState.ACTIVE);
+						setControllerState(RampState.ACTIVE, "Ramp activating - snow is incoming!");
 					} else if (isCold(response)) {
-						rampController.setState(RampState.READY);
+						setControllerState(RampState.READY, "Ramp is on standby, heat is ready!");
 					} else {
-						rampController.setState(RampState.IDLE);
+						setControllerState(RampState.IDLE, "Ramp shutting down - enjoy warm the weather!");
 					}
-					
+
 				} catch (Throwable t) {
 					t.printStackTrace();
+					ns.sendMessage("Error occured, see logs on device. WEE:63");
 				}
 			}
 		};
 
 		future = executor.scheduleAtFixedRate(task, initialStartDelay, periodLength, periodUnits);
 
+	}
+	
+	private void setControllerState(RampState newState, String message) {
+		if (newState != rampController.getState()) {
+			rampController.setState(newState);
+			ns.sendMessage(message);
+		}
 	}
 
 	public void setPeriodLength(long period, TimeUnit unit) {
@@ -77,16 +86,20 @@ public class WeatherEventEngine {
 		this.ws = ws;
 	}
 
+	public void setNotificationService(NotificationService service) {
+		ns = service;
+	}
+
 	public boolean stop() {
 		return future.cancel(false);
 	}
 
 	public int getIdleThreshold() {
-		return idleThreshold;
+		return readyThreshold;
 	}
 
 	public void setIdleThreshold(int temprature) {
-		idleThreshold = temprature;
+		readyThreshold = temprature;
 	}
 
 	private void logWeather(WeatherResponse response) {
@@ -107,7 +120,7 @@ public class WeatherEventEngine {
 
 		logger.info(message.toString());
 	}
-	
+
 	private boolean isSnowingNowOrSoon(WeatherResponse response) {
 		String conditionsCurrent = response.getConditions().getWeather();
 		String conditionsPeriod1 = response.getSimpleForecast().getDays2().get(0).getConditions();
@@ -122,10 +135,10 @@ public class WeatherEventEngine {
 
 	private boolean isCold(WeatherResponse response) {
 		float tempCurrent = response.getConditions().getTempF();
-		return tempCurrent < idleThreshold;
+		return tempCurrent < readyThreshold;
 	}
 
 	public void setRampController(RampController controller) {
-		rampController  = controller;
+		rampController = controller;
 	}
 }

@@ -39,4 +39,8 @@ public class Configuration {
 		return prop.getProperty("wunderground.zipCode");
 	}
 
+	public String getIFTTTApiKey() {
+		return prop.getProperty("ifttt.apikey");
+	}
+
 }

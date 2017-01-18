@@ -6,7 +6,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.casad.weatherwatcher.RampController.RampState;
+import com.casad.weatherwatcher.controller.RampController;
+import com.casad.weatherwatcher.controller.RampController.RampState;
 
 public class TestRampController {
 
