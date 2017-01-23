@@ -29,6 +29,7 @@ public class WeatherWatcher {
 	protected static GpioPinDigitalOutput onlinePin = null;
 	protected static JMaker maker = null;
 	
+	private static final long HOURS_TO_MILLISECONDS = 3_600_000;
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -109,6 +110,7 @@ public class WeatherWatcher {
 		// Prepare the weather event engine
 		WeatherEventEngine eng = new WeatherEventEngine();
 		eng.setPeriodLength(60, TimeUnit.MINUTES);
+		eng.setDeactivationDelay(24 * HOURS_TO_MILLISECONDS);
 		eng.setRampController(controller);
 		eng.setWeatherService(new WeatherService() {
 			

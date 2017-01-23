@@ -27,7 +27,7 @@ public class WeatherEventEngine {
 	private int readyActivateThreshold = 35;
 	private int readyDeactivateThreshold = 40;
 	
-	private long standdownDelay = 0;
+	private long deactivateDelay = 0;
 
 	private WeatherService ws = null;
 	private NotificationService ns = null;
@@ -40,6 +40,7 @@ public class WeatherEventEngine {
 	private long initialStartDelay = 0;
 	
 	private RampController rampController = null;
+	protected long deactivateTime = 0;
 
 	public WeatherEventEngine() {
 		executor = Executors.newScheduledThreadPool(1);
@@ -60,6 +61,12 @@ public class WeatherEventEngine {
 
 					if (isSnowingNowOrSoon(response)) {
 						setControllerState(RampState.ACTIVE, "Ramp activating - snow is incoming!");
+						deactivateTime  = 0;
+					} else if (deactivateTime == 0 && deactivateDelay != 0) {
+						deactivateTime = System.currentTimeMillis() + deactivateDelay;
+					} else if (deactivateTime > System.currentTimeMillis()) {
+						ns.sendMessage("The snow has recently stopped - keeping the ramp heated for a bit longer to ensure the snow is all gone");
+						return;
 					} else if (isCold(response)) {
 						setControllerState(RampState.READY, "Ramp is on standby, heat is ready!");
 					} else if (isWarm(response)) {
@@ -98,6 +105,10 @@ public class WeatherEventEngine {
 		}
 	}
 
+	public void setDeactivationDelay(long time) {
+		deactivateDelay = time;
+	}
+	
 	public void setPeriodLength(long period, TimeUnit unit) {
 		periodLength = period;
 		periodUnits = unit;

@@ -176,6 +176,33 @@ public class TestWeatherEventEngine {
 		assertEquals(0, readyCount);
 		assertEquals(2, idleCount);
 	}
+	
+	@Test
+	public void testDeactivateDelay() throws Exception {
+		MockWeatherService mockWS = new MockWeatherService();
+		mockWS.setWeatherReport(CLEAR_WARM);
+
+		WeatherEventEngine eng = getWeatherEngineForTest(mockWS); 
+		eng.setDeactivationDelay(1000);
+		eng.start();
+
+		mockWS.waitForQuery(3);
+		mockWS.setWeatherReport(SNOW_COLD);
+		mockWS.waitForQuery(3);
+		mockWS.setWeatherReport(CLEAR_WARM);
+		mockWS.waitForQuery(3);
+		
+		assertEquals(1, activateCount);
+		assertEquals(0, readyCount);
+		assertEquals(1, idleCount);
+		
+		Thread.sleep(1000);
+		mockWS.waitForQuery(3);
+		assertTrue(eng.stop());
+		assertEquals(1, activateCount);
+		assertEquals(0, readyCount);
+		assertEquals(2, idleCount);
+	}
 
 	@Before
 	public void resetTriggers() {
