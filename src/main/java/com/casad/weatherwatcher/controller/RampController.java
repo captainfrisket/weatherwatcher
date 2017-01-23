@@ -13,7 +13,9 @@ public class RampController {
 		setIdle = makeIdle;
 		setReady = makeReady;
 		setActive = makeActive;
-		currentState = null;
+		
+		currentState = RampState.IDLE;
+		setIdle.run();
 	}
 
 	public void setState(RampState newState) {

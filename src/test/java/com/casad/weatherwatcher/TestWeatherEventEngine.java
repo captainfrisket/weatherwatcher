@@ -33,15 +33,16 @@ public class TestWeatherEventEngine {
 	private static final String CLEAR = "Clear";
 	private static final String SNOW = "SNOW";
 
-	private static final WeatherResponse GOOD_WEATHER = createWeatherResponse(CLEAR, 72, CLEAR, CLEAR, CLEAR, CLEAR);
+	private static final WeatherResponse CLEAR_WARM = createWeatherResponse(CLEAR, 72, CLEAR, CLEAR, CLEAR, CLEAR);
 	private static final WeatherResponse CLEAR_COLD = createWeatherResponse(CLEAR, 10, CLEAR, CLEAR, CLEAR, CLEAR);
-	private static final WeatherResponse SNOWING = createWeatherResponse(SNOW, 10, CLEAR, CLEAR, CLEAR, CLEAR);
+	private static final WeatherResponse CLEAR_COOL = createWeatherResponse(CLEAR, 35, CLEAR, CLEAR, CLEAR, CLEAR);
+	private static final WeatherResponse SNOW_COLD = createWeatherResponse(SNOW, 10, CLEAR, CLEAR, CLEAR, CLEAR);
 
 	
 	@Test
 	public void testStartStop() throws Exception {
 		MockWeatherService mockWS = new MockWeatherService();
-		mockWS.setWeatherReport(GOOD_WEATHER);
+		mockWS.setWeatherReport(CLEAR_WARM);
 
 		WeatherEventEngine eng = getWeatherEngineForTest(mockWS); 
 
@@ -60,42 +61,31 @@ public class TestWeatherEventEngine {
 		WeatherEventEngine eng = new WeatherEventEngine();
 		eng.setPeriodLength(weatherEventEnginePeriodLength, weatherEventEnginePeriodUnit);
 
-		RampController mockController = new RampController(new Runnable() {
-			@Override
-			public void run() {
-				// Make IDLE / OFF
-				TestWeatherEventEngine.idleTriggered();
-			}
-		}, new Runnable() {
-			@Override
-			public void run() {
-				// Make READY
-				TestWeatherEventEngine.readyTriggered();
-			}
-		}, new Runnable() {
-			@Override
-			public void run() {
-				// Make ACTIVE
-				TestWeatherEventEngine.activateTriggered();
-			}
+		RampController mockController = new RampController(() -> {
+			TestWeatherEventEngine.idleTriggered();
+		}, () -> {
+			TestWeatherEventEngine.readyTriggered();
+		}, () -> {
+			TestWeatherEventEngine.activateTriggered();
 		});
-		
+
 		eng.setRampController(mockController);
 		eng.setWeatherService(mockWS);
+		eng.setNotificationService((message) -> { System.out.println("Message: "+message); });
 		return eng;
 	}
 
 	@Test
 	public void testActivate() throws Exception {
 		MockWeatherService mockWS = new MockWeatherService();
-		mockWS.setWeatherReport(GOOD_WEATHER);
+		mockWS.setWeatherReport(CLEAR_WARM);
 
 		WeatherEventEngine eng = getWeatherEngineForTest(mockWS); 
 
 		eng.start();
 
 		mockWS.waitForQuery(3);
-		mockWS.setWeatherReport(SNOWING);
+		mockWS.setWeatherReport(SNOW_COLD);
 		
 		mockWS.waitForQuery(3);
 		
@@ -108,10 +98,10 @@ public class TestWeatherEventEngine {
 	@Test
 	public void testReady() throws Exception {
 		MockWeatherService mockWS = new MockWeatherService();
-		mockWS.setWeatherReport(GOOD_WEATHER);
+		mockWS.setWeatherReport(CLEAR_WARM);
 
 		WeatherEventEngine eng = getWeatherEngineForTest(mockWS); 
-
+		
 		eng.start();
 
 		mockWS.waitForQuery(3);
@@ -126,18 +116,59 @@ public class TestWeatherEventEngine {
 	}
 	
 	@Test
+	public void testReadyRange() throws Exception {
+		// COLD < [ACTIVATE READY] < COOL < [DISABLE READY] < WARM
+		
+		MockWeatherService mockWS = new MockWeatherService();
+		mockWS.setWeatherReport(CLEAR_WARM);
+		WeatherEventEngine eng = getWeatherEngineForTest(mockWS); 
+		eng.start();
+		mockWS.waitForQuery(3);
+		
+		mockWS.setWeatherReport(CLEAR_COOL);
+		mockWS.waitForQuery(3);
+		
+		assertEquals(0, activateCount);
+		assertEquals(0, readyCount);
+		assertEquals(1, idleCount);
+		
+		mockWS.setWeatherReport(CLEAR_COLD);
+		mockWS.waitForQuery(3);
+		
+		assertEquals(0, activateCount);
+		assertEquals(1, readyCount);
+		assertEquals(1, idleCount);
+		
+		mockWS.setWeatherReport(CLEAR_COOL);
+		mockWS.waitForQuery(3);
+		
+		assertEquals(0, activateCount);
+		assertEquals(1, readyCount);
+		assertEquals(1, idleCount);
+		
+		mockWS.setWeatherReport(CLEAR_WARM);
+		mockWS.waitForQuery(3);
+		
+		assertEquals(0, activateCount);
+		assertEquals(1, readyCount);
+		assertEquals(2, idleCount);
+		
+		assertTrue(eng.stop());
+	}
+	
+	@Test
 	public void testDeactivate() throws Exception {
 		MockWeatherService mockWS = new MockWeatherService();
-		mockWS.setWeatherReport(GOOD_WEATHER);
+		mockWS.setWeatherReport(CLEAR_WARM);
 
 		WeatherEventEngine eng = getWeatherEngineForTest(mockWS); 
 
 		eng.start();
 
 		mockWS.waitForQuery(3);
-		mockWS.setWeatherReport(SNOWING);
+		mockWS.setWeatherReport(SNOW_COLD);
 		mockWS.waitForQuery(3);
-		mockWS.setWeatherReport(GOOD_WEATHER);
+		mockWS.setWeatherReport(CLEAR_WARM);
 		mockWS.waitForQuery(3);
 		
 		assertTrue(eng.stop());
@@ -228,7 +259,7 @@ public class TestWeatherEventEngine {
 		@Override
 		public WeatherResponse getWeatherReport() {
 			queries++;
-
+			System.out.println("Queried");
 			return report;
 		}
 

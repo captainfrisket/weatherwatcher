@@ -24,7 +24,10 @@ import com.casad.weatherwatcher.controller.RampController.RampState;
 public class WeatherEventEngine {
 	private static final Logger logger = LoggerFactory.getLogger(WeatherEventEngine.class);
 
-	private int readyThreshold = 35;
+	private int readyActivateThreshold = 35;
+	private int readyDeactivateThreshold = 40;
+	
+	private long standdownDelay = 0;
 
 	private WeatherService ws = null;
 	private NotificationService ns = null;
@@ -35,7 +38,7 @@ public class WeatherEventEngine {
 	private long periodLength = 4;
 	private TimeUnit periodUnits = TimeUnit.HOURS;
 	private long initialStartDelay = 0;
-
+	
 	private RampController rampController = null;
 
 	public WeatherEventEngine() {
@@ -43,6 +46,10 @@ public class WeatherEventEngine {
 	}
 
 	public void start() {
+		assertNotNull("A weather service must be provided", ws);
+		assertNotNull("A notification service must be provided", ns);
+		assertNotNull("A ramp controller must be provided", rampController);
+		
 		Runnable task = new Runnable() {
 
 			@Override
@@ -55,21 +62,35 @@ public class WeatherEventEngine {
 						setControllerState(RampState.ACTIVE, "Ramp activating - snow is incoming!");
 					} else if (isCold(response)) {
 						setControllerState(RampState.READY, "Ramp is on standby, heat is ready!");
-					} else {
+					} else if (isWarm(response)) {
 						setControllerState(RampState.IDLE, "Ramp shutting down - enjoy warm the weather!");
+					} else if (rampController.getState() == RampState.ACTIVE) {
+						// The ramp state is active but it is no longer snowing,
+						// but we are between the ready thresholds. Put the ramp
+						// into a READY state.
+						setControllerState(RampState.READY, "Ramp is on standby, weather is looking up!");
+					} else {
+						// We should never get here...
+						ns.sendMessage("Error occured, see logs on device. WEE:0001");
 					}
 
 				} catch (Throwable t) {
 					t.printStackTrace();
-					ns.sendMessage("Error occured, see logs on device. WEE:63");
+					ns.sendMessage("Error occured, see logs on device. WEE:0002");
 				}
 			}
 		};
-
+		
 		future = executor.scheduleAtFixedRate(task, initialStartDelay, periodLength, periodUnits);
 
 	}
-	
+
+	private void assertNotNull(String message, Object obj) {
+		if (obj == null) {
+			throw new RuntimeException(message);
+		}
+	}
+
 	private void setControllerState(RampState newState, String message) {
 		if (newState != rampController.getState()) {
 			rampController.setState(newState);
@@ -94,12 +115,9 @@ public class WeatherEventEngine {
 		return future.cancel(false);
 	}
 
-	public int getIdleThreshold() {
-		return readyThreshold;
-	}
-
-	public void setIdleThreshold(int temprature) {
-		readyThreshold = temprature;
+	public void setReadyThreshold(int turnOn, int turnOff) {
+		readyActivateThreshold = turnOn;
+		readyDeactivateThreshold = turnOff;
 	}
 
 	private void logWeather(WeatherResponse response) {
@@ -135,7 +153,12 @@ public class WeatherEventEngine {
 
 	private boolean isCold(WeatherResponse response) {
 		float tempCurrent = response.getConditions().getTempF();
-		return tempCurrent < readyThreshold;
+		return tempCurrent < readyActivateThreshold;
+	}
+	
+	private boolean isWarm(WeatherResponse response) {
+		float tempCurrent = response.getConditions().getTempF();
+		return tempCurrent > readyDeactivateThreshold;
 	}
 
 	public void setRampController(RampController controller) {
