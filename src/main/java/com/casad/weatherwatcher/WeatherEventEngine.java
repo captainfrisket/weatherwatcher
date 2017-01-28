@@ -40,7 +40,7 @@ public class WeatherEventEngine {
 	private long initialStartDelay = 0;
 	
 	private RampController rampController = null;
-	protected long deactivateTime = 0;
+	protected long deactivateTime = 1;
 
 	public WeatherEventEngine() {
 		executor = Executors.newScheduledThreadPool(1);
@@ -58,15 +58,15 @@ public class WeatherEventEngine {
 				try {
 					WeatherResponse response = ws.getWeatherReport();
 					logWeather(response);
-
+					
 					if (isSnowingNowOrSoon(response)) {
 						setControllerState(RampState.ACTIVE, "Ramp activating - snow is incoming!");
-						deactivateTime  = 0;
+						deactivateTime = 0;
 					} else if (deactivateTime == 0 && deactivateDelay != 0) {
+						ns.sendMessage("The snow has recently stopped - keeping the ramp heated for a bit longer to ensure the snow is all gone");
 						deactivateTime = System.currentTimeMillis() + deactivateDelay;
 					} else if (deactivateTime > System.currentTimeMillis()) {
-						ns.sendMessage("The snow has recently stopped - keeping the ramp heated for a bit longer to ensure the snow is all gone");
-						return;
+						logger.info("Deactivating cooldown in progress...");
 					} else if (isCold(response)) {
 						setControllerState(RampState.READY, "Ramp is on standby, heat is ready!");
 					} else if (isWarm(response)) {
@@ -77,13 +77,13 @@ public class WeatherEventEngine {
 						// into a READY state.
 						setControllerState(RampState.READY, "Ramp is on standby, weather is looking up!");
 					} else {
-						// We should never get here...
-						ns.sendMessage("Error occured, see logs on device. WEE:0001");
+						// It has not been snowing, but we are between our ready and idle temps.
 					}
 
 				} catch (Throwable t) {
 					t.printStackTrace();
-					ns.sendMessage("Error occured, see logs on device. WEE:0002");
+					logger.error("Exception Caught (WEE:0002)", t);
+					ns.sendMessage("Error occured, see logs on device. WEE:0002 - " + t.toString());
 				}
 			}
 		};
