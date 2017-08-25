@@ -1,1 +1,20 @@
 language: java
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "d+PLmMq1DJW8llbAzdQ7YK0mvSXqdk4t2GIbhiD0kFszm9fnjZM3RGZb3/txTFUxaJydqgdR/GUON42SH9+KxEFXA1GLojDNa4s2XgjNrRTYp+BqAnAyIXzIRSspG5ZMCXXX0GllPXw0MoT9hml9m4toOBKW3ABtPfJg6BAHuQKBPQnGv8Ehyix1vAu2YruGjtj023wYc6TiCjLPoKSPfkv7J1SBYeHMDFUjuYU5ao7tTZ+FLaqEA4e3lhRDAuSew3cPfkzmnGz6oGCGP3Mn9y8uSsA91z2H5A5K9h5blExzvCh+5VXX9wmFQ3ofu7ooLkutLaWMIF8u01RDUkBVkhd5qg/9+0nAmjue0tRoZTkB01I3dLJ0HSI0HXVMR+Sbo9NHjl1nznziAiSswbr3oKXiYYLnjpLiQokD4bySPQv20fV6e3wYR0b6GtY3DR+4jksBShh1rnjbogk9T8IjasW1suCFI2xF+jhnm+PIgNcT9lh/vUALX4Px3rLC1L33M/9wuFXGMlA5jXnH7Fka2m6URqPgwq4UmFCTqHNPvzW0V6pxDJFByGrjVzNFQuQIEQqVHzdmzaPb21HNgXn0J7ukrpBis5MjeKaCwEq71XeZNeS2TJh585tgRlS5MXDEnEqb1uGStjHk5lAgFSH3rlN0vGJ7ZLCUsNmmmdjBR6A="
+
+before_install:
+      - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
+addons:
+  coverity_scan:
+    project:
+      name: "dcasavant/weatherwatcher"
+      description: "Weather Watcher"
+    notification_email: dcasavant@gmail.com
+    build_command_prepend: ./gradlew clean
+    build_command:   ./gradlew -s -Dorg.gradle.daemon=false build
+    branch_pattern: coverity_scan
