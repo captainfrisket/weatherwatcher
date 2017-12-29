@@ -1,0 +1,3 @@
+[submodule "submodules/wundergroundapi"]
+	path = submodules/wundergroundapi
+	url = https://github.com/dcasavant/wundergroundapi

@@ -25,8 +25,14 @@ dependencies {
     compile group: 'com.pi4j', name:'pi4j-core', version: '1.1'
 //    compile group: 'org.twitter4j', name: 'twitter4j-core', version: '4.0.1'
     compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.5'
-    compile 'com.github.dcasavant:wundergroundapi:master-SNAPSHOT'
+//    compile 'com.github.dcasavant:wundergroundapi:master-SNAPSHOT'
 	compile 'com.github.lodenrogue:JMaker:master-SNAPSHOT'
+
+	compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.1'
+	compile group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.3'
+
+
+	compile project(':submodules/wundergroundapi')
 	
     // Declare the dependency for your favorite test framework you want to use in your tests.
     testCompile 'junit:junit:4.12'
