@@ -27,7 +27,7 @@ public class WeatherWatcher {
 	protected static GpioPinDigitalOutput activePin = null;
 	protected static GpioPinDigitalOutput relay3 = null;
 	protected static GpioPinDigitalOutput onlinePin = null;
-	protected static JMaker maker = null;
+	protected static JMaker ifttt = null;
 	
 	private static final long HOURS_TO_MILLISECONDS = 3_600_000;
 	
@@ -41,7 +41,7 @@ public class WeatherWatcher {
 		
 		final String jMakerIFTTTKey = config.getIFTTTApiKey();
 		assertSet("A JMaker API key must be specified. See README.md for more information.", jMakerIFTTTKey);
-		maker = new JMaker("GarageStatusUpdate", jMakerIFTTTKey);//"CD2j-Iv6_cq5iRUg71Ixs"
+		ifttt = new JMaker("GarageStatusUpdate", jMakerIFTTTKey);
 
 		/*
 		 * Create the GPIO controller instance
@@ -142,7 +142,7 @@ public class WeatherWatcher {
 	}
 
 	private static void triggerIftt(String message) {
-		if (maker == null) {
+		if (ifttt == null) {
 			logger.info(message);
 			return;
 		}
@@ -154,7 +154,7 @@ public class WeatherWatcher {
 		values.add("");
 		
 		try {
-			maker.trigger(values);
+			ifttt.trigger(values);
 		} catch (IOException e) {
 			logger.error("There was a problem connecting to the IFTT maker channel");
 			e.printStackTrace();
