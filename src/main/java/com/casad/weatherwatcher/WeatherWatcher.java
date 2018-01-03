@@ -12,7 +12,7 @@ import com.amphibian.weather.request.Feature;
 import com.amphibian.weather.request.WeatherRequest;
 import com.amphibian.weather.response.WeatherResponse;
 import com.casad.weatherwatcher.controller.RampController;
-import com.lodenrogue.jmaker.JMaker;
+import com.lodenrogue.JMaker.JMaker;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;

@@ -2,7 +2,7 @@
  * Provided by https://github.com/lodenrogue/JMaker
  * TODO: Reference project
  */
-package com.lodenrogue.jmaker;
+package com.lodenrogue.JMaker;
 
 import java.io.IOException;
 import java.util.List;

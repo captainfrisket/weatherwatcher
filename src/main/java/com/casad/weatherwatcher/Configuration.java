@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 public class Configuration {
 	private static final Logger logger = LoggerFactory.getLogger(Configuration.class);
 
-	private static final String SWIRL_PROPERTIES = "swirl.properties";
+	private static final String SWIRL_PROPERTIES = "ww.properties";
 	private static Configuration instance = null;
 	private Properties prop = new Properties();
 
