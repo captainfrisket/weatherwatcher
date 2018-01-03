@@ -136,7 +136,6 @@ public class WeatherWatcher {
 		eng.start();
 		
 		onlinePin.high();
-		triggerIftt("Startup Complete, controller online!");
 		while(true) {
 			Thread.sleep(3600000);
 		}
