@@ -3,6 +3,6 @@
  * by 'dave' at '12/14/16 11:17 PM' with Gradle 3.0
  */
 
-include 'submodules/wundergroundapi'
+include ":submodules:wundergroundapi"
 
 rootProject.name = 'weatherwatcher'
