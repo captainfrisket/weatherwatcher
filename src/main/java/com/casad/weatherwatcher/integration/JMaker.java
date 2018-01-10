@@ -2,7 +2,7 @@
  * Provided by https://github.com/lodenrogue/JMaker
  * TODO: Reference project
  */
-package com.lodenrogue.JMaker;
+package com.casad.weatherwatcher.integration;
 
 import java.io.IOException;
 import java.util.List;

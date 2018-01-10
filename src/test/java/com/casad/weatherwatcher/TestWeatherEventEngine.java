@@ -71,7 +71,7 @@ public class TestWeatherEventEngine {
 
 		eng.setRampController(mockController);
 		eng.setWeatherService(mockWS);
-		eng.setNotificationService((message) -> { System.out.println("Message: "+message); });
+		eng.setNotificationService((subject, message) -> { System.out.println("Subject: " + subject + "\nMessage: " + message); });
 		return eng;
 	}
 

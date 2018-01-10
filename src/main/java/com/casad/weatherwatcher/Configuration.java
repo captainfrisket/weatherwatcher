@@ -43,4 +43,21 @@ public class Configuration {
 		return prop.getProperty("ifttt.apikey");
 	}
 
+	public String getTwitterAPIKey() {
+		return prop.getProperty("twitter.apikey");
+	}
+	
+	public String getEmailUsername() {
+		return prop.getProperty("email.username");
+	}
+	
+	public String getEmailPassword() {
+		return prop.getProperty("email.password");
+	}
+	
+	public String getEmailTo() {
+		return prop.getProperty("email.notifyAddress");
+	}
+	
+	
 }

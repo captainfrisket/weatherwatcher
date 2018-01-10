@@ -3,6 +3,7 @@ package com.casad.weatherwatcher;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -12,7 +13,8 @@ import com.amphibian.weather.request.Feature;
 import com.amphibian.weather.request.WeatherRequest;
 import com.amphibian.weather.response.WeatherResponse;
 import com.casad.weatherwatcher.controller.RampController;
-import com.lodenrogue.JMaker.JMaker;
+import com.casad.weatherwatcher.integration.EmailConnection;
+import com.casad.weatherwatcher.integration.JMaker;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
@@ -28,6 +30,7 @@ public class WeatherWatcher {
 	protected static GpioPinDigitalOutput relay3 = null;
 	protected static GpioPinDigitalOutput onlinePin = null;
 	protected static JMaker ifttt = null;
+	protected static EmailConnection email = null;
 	
 	private static final long HOURS_TO_MILLISECONDS = 3_600_000;
 	
@@ -43,6 +46,14 @@ public class WeatherWatcher {
 		assertSet("A JMaker API key must be specified. See README.md for more information.", jMakerIFTTTKey);
 		ifttt = new JMaker("GarageStatusUpdate", jMakerIFTTTKey);
 
+		Properties props = new Properties();
+		props.put("mail.smtp.host", "smtp.gmail.com");
+		props.put("mail.smtp.socketFactory.port", "465");
+		props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+		props.put("mail.smtp.auth", "true");
+		props.put("mail.smtp.port", "465");
+		
+		email = new EmailConnection(props, config.getEmailUsername(), config.getEmailPassword(), config.getEmailTo());
 		/*
 		 * Create the GPIO controller instance
 		 * 
@@ -128,8 +139,9 @@ public class WeatherWatcher {
 		eng.setNotificationService(new NotificationService() {
 			
 			@Override
-			public void sendMessage(String message) {
-				triggerIftt(message);
+			public void sendMessage(String subject, String message) {
+				triggerIftt(subject);
+				sendEmail(subject, message);
 			}
 		});
 		
@@ -141,15 +153,15 @@ public class WeatherWatcher {
 		}
 	}
 
-	private static void triggerIftt(String message) {
+	private static void triggerIftt(String aMessage) {
 		if (ifttt == null) {
-			logger.info(message);
+			logger.info("Unable to send message.  IFTTT not configured.  Message: " + aMessage);
 			return;
 		}
 		
-		logger.info("Notifying: " + message);
+		logger.info("IFTTT Notifying: " + aMessage);
 		List<String> values = new ArrayList<String>();
-		values.add(message);
+		values.add(aMessage);
 		values.add("");
 		values.add("");
 		
@@ -159,6 +171,21 @@ public class WeatherWatcher {
 			logger.error("There was a problem connecting to the IFTT maker channel");
 			e.printStackTrace();
 		}
+	}
+	
+	private static void sendEmail(String aSubject, String aMessage) {
+		if (email == null) {
+			logger.info("Unable to send message.  Email not configured.  Message: " + aMessage);
+			return;
+		}
+		
+		try {
+			email.sendMessage("Garage Ramp: " + aSubject, "There has been an update for the garage ramp: \n\n" + aMessage);
+		} catch (Exception e) {
+			logger.error("There was a problem sending email");
+			e.printStackTrace();
+		}
+		
 	}
 
 	private static void assertSet(String message, String value) {

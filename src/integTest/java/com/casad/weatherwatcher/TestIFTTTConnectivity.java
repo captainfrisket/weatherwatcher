@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import org.junit.Test;
 
-import com.lodenrogue.jmaker.JMaker;
+import com.casad.weatherwatcher.integration.JMaker;
 
 public class TestIFTTTConnectivity {
 	@Test

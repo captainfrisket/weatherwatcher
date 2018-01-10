@@ -1,5 +1,7 @@
 package com.casad.weatherwatcher;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -60,22 +62,37 @@ public class WeatherEventEngine {
 					logWeather(response);
 					
 					if (isSnowingNowOrSoon(response)) {
-						setControllerState(RampState.ACTIVE, "Ramp activating - snow is incoming!");
+						setControllerState(RampState.ACTIVE);
+						ns.sendMessage(
+								"Ramp activating - snow is incoming!", 
+								"Snow has been detected in the forecast.  The ramp heater is now activating.");
 						deactivateTime = 0;
 					} else if (deactivateTime == 0 && deactivateDelay != 0) {
-						ns.sendMessage("The snow has recently stopped - keeping the ramp heated for a bit longer to ensure the snow is all gone");
+						ns.sendMessage(
+								"The snow has stopped staying active for a bit longer",
+								"The snow has recently stopped.  The ramp will be heated for a bit longer to ensure the snow is all gone.");
 						deactivateTime = System.currentTimeMillis() + deactivateDelay;
 					} else if (deactivateTime > System.currentTimeMillis()) {
 						logger.info("Deactivating cooldown in progress...");
 					} else if (isCold(response)) {
-						setControllerState(RampState.READY, "Ramp is on standby, heat is ready!");
+						setControllerState(RampState.READY);
+						ns.sendMessage(
+								"Ramp is going on standby due to cold weather",
+								"The ramp head is going on standby due to cold weather.");
 					} else if (isWarm(response)) {
-						setControllerState(RampState.IDLE, "Ramp shutting down - enjoy warm the weather!");
+						setControllerState(RampState.IDLE);
+						ns.sendMessage(
+								"Ramp shutting down - enjoy warm the weather!",
+								"The weather is currently warm - the ramp is deactivating.");
 					} else if (rampController.getState() == RampState.ACTIVE) {
 						// The ramp state is active but it is no longer snowing,
 						// but we are between the ready thresholds. Put the ramp
 						// into a READY state.
-						setControllerState(RampState.READY, "Ramp is on standby, weather is looking up!");
+						setControllerState(RampState.READY);
+						ns.sendMessage(
+								"Ramp is on standby, weather is looking up!",
+								"It is no longer snowing, the ramp is going on standby.");
+
 					} else {
 						// It has not been snowing, but we are between our ready and idle temps.
 					}
@@ -83,7 +100,12 @@ public class WeatherEventEngine {
 				} catch (Throwable t) {
 					t.printStackTrace();
 					logger.error("Exception Caught (WEE:0002)", t);
-					ns.sendMessage("Error occured, see logs on device. WEE:0002 - " + t.toString());
+					StringWriter sw = new StringWriter();
+					t.printStackTrace(new PrintWriter(sw));
+					ns.sendMessage(
+							"An unexpected error occured in the garage ramp controller",
+							"Error occured, see logs for more information.\n\n\nWEE:0002 - " + sw.toString());
+					
 				}
 			}
 		};
@@ -98,10 +120,10 @@ public class WeatherEventEngine {
 		}
 	}
 
-	private void setControllerState(RampState newState, String message) {
+	private void setControllerState(RampState newState) {
 		if (newState != rampController.getState()) {
 			rampController.setState(newState);
-			ns.sendMessage(message);
+//			ns.sendMessage(message);
 		}
 	}
 
