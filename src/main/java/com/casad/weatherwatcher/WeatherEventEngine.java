@@ -65,12 +65,12 @@ public class WeatherEventEngine {
 						setControllerState(RampState.ACTIVE);
 						ns.sendMessage(
 								"Ramp activating - snow is incoming!", 
-								"Snow has been detected in the forecast.  The ramp heater is now activating.");
+								"Snow has been detected in the forecast.  The ramp heater is now activating.\n\n" + getTextReport(response));
 						deactivateTime = 0;
 					} else if (deactivateTime == 0 && deactivateDelay != 0) {
 						ns.sendMessage(
 								"The snow has stopped staying active for a bit longer",
-								"The snow has recently stopped.  The ramp will be heated for a bit longer to ensure the snow is all gone.");
+								"The snow has recently stopped.  The ramp will be heated for a bit longer to ensure the snow is all gone.\n\n" + getTextReport(response));
 						deactivateTime = System.currentTimeMillis() + deactivateDelay;
 					} else if (deactivateTime > System.currentTimeMillis()) {
 						logger.info("Deactivating cooldown in progress...");
@@ -78,12 +78,12 @@ public class WeatherEventEngine {
 						setControllerState(RampState.READY);
 						ns.sendMessage(
 								"Ramp is going on standby due to cold weather",
-								"The ramp head is going on standby due to cold weather.");
+								"The ramp head is going on standby due to cold weather.\n\n" + getTextReport(response));
 					} else if (isWarm(response)) {
 						setControllerState(RampState.IDLE);
 						ns.sendMessage(
 								"Ramp shutting down - enjoy warm the weather!",
-								"The weather is currently warm - the ramp is deactivating.");
+								"The weather is currently warm - the ramp is deactivating.\n\n" + getTextReport(response));
 					} else if (rampController.getState() == RampState.ACTIVE) {
 						// The ramp state is active but it is no longer snowing,
 						// but we are between the ready thresholds. Put the ramp
@@ -91,7 +91,7 @@ public class WeatherEventEngine {
 						setControllerState(RampState.READY);
 						ns.sendMessage(
 								"Ramp is on standby, weather is looking up!",
-								"It is no longer snowing, the ramp is going on standby.");
+								"It is no longer snowing, the ramp is going on standby.\n\n" + getTextReport(response));
 
 					} else {
 						// It has not been snowing, but we are between our ready and idle temps.
@@ -170,6 +170,24 @@ public class WeatherEventEngine {
 		message.append("[").append(conditionsPeriod3).append("] ");
 
 		logger.info(message.toString());
+	}
+	
+	private String getTextReport(WeatherResponse response) {
+		StringBuffer respose = new StringBuffer("Weather Report:").append("\n");
+		
+		String conditionsCurrent = response.getConditions().getWeather();
+		float tempCurrent = response.getConditions().getTempF();
+		String conditionsPeriod1 = response.getSimpleForecast().getDays2().get(0).getConditions();
+		String conditionsPeriod2 = response.getSimpleForecast().getDays2().get(1).getConditions();
+		String conditionsPeriod3 = response.getSimpleForecast().getDays2().get(2).getConditions();
+
+		respose.append("Current Weather is ").append(conditionsCurrent).append(" and ").append(tempCurrent).append("F.");
+		respose.append("\n");
+		respose.append("Incoming weather for the next three periods: ").append(conditionsPeriod1).append(", ");
+		respose.append(conditionsPeriod2).append(", ");
+		respose.append(conditionsPeriod3).append(".");
+		
+		return respose.toString();
 	}
 
 	private boolean isSnowingNowOrSoon(WeatherResponse response) {
