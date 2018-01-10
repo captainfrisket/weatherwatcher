@@ -123,7 +123,6 @@ public class WeatherEventEngine {
 	private void setControllerState(RampState newState) {
 		if (newState != rampController.getState()) {
 			rampController.setState(newState);
-//			ns.sendMessage(message);
 		}
 	}
 
@@ -173,7 +172,7 @@ public class WeatherEventEngine {
 	}
 	
 	private String getTextReport(WeatherResponse response) {
-		StringBuffer respose = new StringBuffer("Weather Report:").append("\n");
+		StringBuffer message = new StringBuffer("Weather Report:").append("\n");
 		
 		String conditionsCurrent = response.getConditions().getWeather();
 		float tempCurrent = response.getConditions().getTempF();
@@ -181,13 +180,21 @@ public class WeatherEventEngine {
 		String conditionsPeriod2 = response.getSimpleForecast().getDays2().get(1).getConditions();
 		String conditionsPeriod3 = response.getSimpleForecast().getDays2().get(2).getConditions();
 
-		respose.append("Current weather is ").append(conditionsCurrent).append(" and ").append(tempCurrent).append("F.");
-		respose.append("\n");
-		respose.append("Incoming weather for the next three periods: ").append(conditionsPeriod1).append(", ");
-		respose.append(conditionsPeriod2).append(", ");
-		respose.append(conditionsPeriod3).append(".");
+		message.append("Current weather is ").append(conditionsCurrent).append(" and ").append(tempCurrent).append("F. ");
+		if(isSnowingNowOrSoon(response)) {
+			message.append("Analysis: Snow is incoming!");
+		} else if (isCold(response)) {
+			message.append("Analysis: It is cold.");
+		} else if (isWarm(response)) {
+			message.append("Analysis: It is warm out.");
+		}
 		
-		return respose.toString();
+		message.append("\n");
+		message.append("Incoming weather for the next three periods: ").append(conditionsPeriod1).append(", ");
+		message.append(conditionsPeriod2).append(", ");
+		message.append(conditionsPeriod3).append(".");
+		
+		return message.toString();
 	}
 
 	private boolean isSnowingNowOrSoon(WeatherResponse response) {
