@@ -181,7 +181,7 @@ public class WeatherEventEngine {
 		String conditionsPeriod2 = response.getSimpleForecast().getDays2().get(1).getConditions();
 		String conditionsPeriod3 = response.getSimpleForecast().getDays2().get(2).getConditions();
 
-		respose.append("Current Weather is ").append(conditionsCurrent).append(" and ").append(tempCurrent).append("F.");
+		respose.append("Current weather is ").append(conditionsCurrent).append(" and ").append(tempCurrent).append("F.");
 		respose.append("\n");
 		respose.append("Incoming weather for the next three periods: ").append(conditionsPeriod1).append(", ");
 		respose.append(conditionsPeriod2).append(", ");
