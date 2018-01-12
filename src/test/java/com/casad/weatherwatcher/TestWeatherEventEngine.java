@@ -95,6 +95,29 @@ public class TestWeatherEventEngine {
 		assertEquals(1, idleCount);
 	}
 	
+	
+	
+	@Test
+	public void testNotificationTrigger() throws Exception {
+		MockWeatherService mockWS = new MockWeatherService();
+		mockWS.setWeatherReport(CLEAR_WARM);
+		
+		MockNotificationService mockNS = new MockNotificationService();
+
+		WeatherEventEngine eng = getWeatherEngineForTest(mockWS);
+		eng.setNotificationService(mockNS);
+
+		eng.start();
+		mockWS.waitForQuery(3);
+		assertEquals(0, mockNS.getNotificationCount());
+		
+		mockWS.setWeatherReport(SNOW_COLD);
+		mockWS.waitForQuery(3);
+		assertEquals(1, mockNS.getNotificationCount());
+		
+		assertTrue(eng.stop());
+	}
+	
 	@Test
 	public void testReady() throws Exception {
 		MockWeatherService mockWS = new MockWeatherService();
@@ -256,6 +279,31 @@ public class TestWeatherEventEngine {
 		return response;
 	}
 
+	public class MockNotificationService implements NotificationService {
+
+		String lastSubject = null;
+		String lastMessage = null;
+		int notificationCount = 0;
+		
+		@Override
+		public void sendMessage(String subject, String message) {
+			System.out.println("Mock NS Triggered");
+			lastSubject = subject;
+			lastMessage = message;
+			notificationCount++;
+		}
+		
+		public int getNotificationCount() {
+			return notificationCount;
+		}
+
+		public void reset() {
+			lastSubject = null;
+			lastMessage = null;
+			notificationCount = 0;
+		}
+	}
+	
 	public class MockWeatherService implements WeatherService {
 
 		private int queries;
@@ -267,11 +315,16 @@ public class TestWeatherEventEngine {
 			queries = 0;
 		}
 
+		/**
+		 * Block on the specified number of queries to be received by the mock weather service.
+		 * @param queryCount
+		 * @throws InterruptedException
+		 */
 		public void waitForQuery(int queryCount) throws InterruptedException {
 			int currentCount = queries;
 			int timeoutCount = WAIT_TIMEOUT / POLL_FREQUENCY;
 			while (timeoutCount-- > 0 && queries < currentCount + queryCount) {
-				System.out.println("Timeout Count: " + timeoutCount + ", Queries: " + queries);
+				//System.out.println("Timeout Count: " + timeoutCount + ", Queries: " + queries);
 				Thread.sleep(POLL_FREQUENCY);
 			}
 			if (queries < currentCount + queryCount) {
@@ -286,7 +339,6 @@ public class TestWeatherEventEngine {
 		@Override
 		public WeatherResponse getWeatherReport() {
 			queries++;
-			System.out.println("Queried");
 			return report;
 		}
 
